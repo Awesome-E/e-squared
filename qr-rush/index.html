@@ -78,8 +78,9 @@
 					outputMessage = document.getElementById("outputMessage"),
 					outputData = document.getElementById("outputData"),
 					startBtn = document.querySelector("button"),
-					scannedCodes = [],
-					animationClearTimeout = setTimeout(()=>{},0);
+					scannedCodes = [];
+			
+			var animationClearTimeout = null;
 					
 			function clearAnimation() {
 				clearTimeout(animationClearTimeout);
