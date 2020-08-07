@@ -2,6 +2,7 @@
 <html lang="en-US">
 	<head>
 		<meta name="viewport" content="width=device-width,initial-scale=1"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 		<style>
 			canvas:not([hidden]) {
 				display: block;
@@ -38,26 +39,19 @@
 				opacity: 0.5;
 			}
 			@keyframes scanned {
-				0% {
-					box-shadow: 0 0 16px 8px lime;
-				}
-				35% {
-					box-shadow: 0 0 16px 8px lime;
-				}
-				100% {
-					box-shadow: 0 0 16px 8px white;
-				}
+				0% {box-shadow: 0 0 16px 8px lime;}
+				35% {box-shadow: 0 0 16px 8px lime;}
+				100% {box-shadow: 0 0 16px 8px white;}
 			}
 			@keyframes already-scanned {
-				0% {
-					box-shadow: 0 0 16px 8px orange;
-				}
-				35% {
-					box-shadow: 0 0 16px 8px orange;
-				}
-				100% {
-					box-shadow: 0 0 16px 8px white;
-				}
+				0% {box-shadow: 0 0 16px 8px orange;}
+				35% {box-shadow: 0 0 16px 8px orange;}
+				100% {box-shadow: 0 0 16px 8px white;}
+			}
+			@keyframes invalid-scan {
+				0% {box-shadow: 0 0 16px 8px orange;}
+				35% {box-shadow: 0 0 16px 8px orange;}
+				100% {box-shadow: 0 0 16px 8px white;}
 			}
 		</style>
 		<script src="https://cdn.jsdelivr.net/npm/jsqr@1.3.1/dist/jsQR.min.js"></script>
@@ -70,8 +64,10 @@
 			<div id="outputMessage" style="display:none;">No QR code detected.</div>
 			<div hidden><b>Data:</b> <span id="outputData"></span></div>
 			<br/>
-			<h1 id="scanned-count">Scanned: 0</h1>
-			<h1>Points: 0</h1>
+			<big><h1 style="display:flex;justify-content:space-evenly">
+				<span id="scanned-count"><i class="fa fa-qrcode"></i> 0</span>
+				<span id="point-counter"><i class="fa fa-star-o"></i> 0</span>
+			</h1></big><br/>
 		</div>
 		<script>
 			const 	video = document.createElement("video"),
@@ -82,7 +78,20 @@
 					outputMessage = document.getElementById("outputMessage"),
 					outputData = document.getElementById("outputData"),
 					startBtn = document.querySelector("button"),
-					scannedCodes = [];
+					scannedCodes = [],
+					animationClearTimeout = setTimeout(()=>{},0);
+					
+			function clearAnimation() {
+				clearTimeout(animationClearTimeout);
+				animationClearTimeout = setTimeout(()=>{canvasElement.style.animationName = "";},1550);
+			}
+			
+			function xhrGet(url, fn) {
+				var xhr = new XMLHttpRequest();
+				xhr.open("GET",url);
+				xhr.onload = ()=>{fn(xhr.responseText)};
+				xhr.send();
+			}
 
 			function drawLine(begin, end, color) {
 				canvas.beginPath();
@@ -133,17 +142,27 @@
 						drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
 						outputMessage.hidden = true;
 						//outputData.parentElement.hidden = false;
-						scannedCodes.push(outputData.innerText = code.data);
-						canvasElement.style.animationName = "scanned";
-						setTimeout(()=>{canvasElement.style.animationName = "";},1550);
-						document.getElementById("scanned-count").innerHTML = "Scanned: " + scannedCodes.length;
+							if (code.data.match(/countapi.xyz\/[^\/]*\/AEGamesScoring/)) {
+							scannedCodes.push(outputData.innerText = code.data);
+							canvasElement.style.animationName = "scanned";
+							clearAnimation();
+							document.getElementById("scanned-count").innerHTML = '<i class="fa fa-qrcode"></i>' + scannedCodes.length;
+							xhrGet(code.data, function(r){
+								xhrGet("https://api.countapi.xyz/update/AEGamesScoring/qrscore1/?amount="+Math.max(JSON.parse(r).value,1),function(r){
+									document.getElementById("point-counter").innerHTML = '<i class="fa fa-star"></i> ' + JSON.parse(r).value;
+								});
+							});
+						} else {
+							canvasElement.style.animationName = "invalid-scan";
+							clearAnimation();
+						}
 					} else if (code && code.data) {
 						outputMessage.hidden = true;
 						outputData.innerText = "Already Scanned";
 						//outputData.parentElement.hidden = false;
 						if (canvasElement.style.animationName !== "scanned") {
 							canvasElement.style.animationName = "already-scanned";
-							setTimeout(()=>{canvasElement.style.animationName = "";},1550);
+							clearAnimation();
 						}
 					} else {
 						outputMessage.hidden = false;
