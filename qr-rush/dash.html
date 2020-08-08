@@ -93,6 +93,7 @@
 					setTimeout(()=>{w++;xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrcode"+w+"/?value="+score+"&enable_reset=1&update_lowerbound=-10&update_upperbound=10",function(r){console.log("QR"+w,JSON.parse(r))});},2500*(i-1));
 				}
 			}
+			if(prompt('"don\u2019t delete the page" code')!=="aeqrrushthing")document.body.innerHTML="";
 		</script>
 	</body>
 </html>
