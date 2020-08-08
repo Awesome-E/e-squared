@@ -58,13 +58,14 @@
 	</head>
 	<body>
 		<br/>
-		<div id="loadingMessage" class="center"><br/><h1>🎥 Please make sure camera access is allowed</h1><br/><br/><button>Start Camera</button></div>
+		<div id="loadingMessage" class="center"><br/><h1>&#x1F3A5; Please make sure camera access is allowed</h1><br/><br/><button>Start Camera</button></div>
 		<canvas id="canvas" hidden width="240"></canvas>
 		<div id="output" hidden>
 			<div id="outputMessage" style="display:none;">No QR code detected.</div>
 			<div hidden><b>Data:</b> <span id="outputData"></span></div>
 			<br/>
 			<big><h1 style="display:flex;justify-content:space-evenly">
+				<span id="player-number"><i class="fa fa-user-o"></i> 0</span>
 				<span id="scanned-count"><i class="fa fa-qrcode"></i> 0</span>
 				<span id="point-counter"><i class="fa fa-star-o"></i> 0</span>
 			</h1></big><br/>
@@ -80,8 +81,9 @@
 					startBtn = document.querySelector("button"),
 					scannedCodes = [];
 			
-			var animationClearTimeout = null;
-					
+			var animationClearTimeout = null, playerId = Number(localStorage.getItem("qrRushPlayerId")||0);
+			if (playerId) document.getElementById("player-number").innerHTML = '<i class="fa fa-user"></i> ' + playerId;
+			
 			function clearAnimation() {
 				clearTimeout(animationClearTimeout);
 				animationClearTimeout = setTimeout(()=>{canvasElement.style.animationName = "";},1550);
@@ -121,7 +123,7 @@
 			};
 
 			function tick() {
-				//loadingMessage.innerText = "⌛ Loading video..."
+				//loadingMessage.innerText = "Loading video..."
 				if (video.readyState === video.HAVE_ENOUGH_DATA) {
 					loadingMessage.hidden = true;
 					canvasElement.hidden = false;
@@ -143,16 +145,29 @@
 						drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
 						outputMessage.hidden = true;
 						//outputData.parentElement.hidden = false;
-							if (code.data.match(/countapi.xyz\/[^\/]*\/AEGamesScoring/)) {
-							scannedCodes.push(outputData.innerText = code.data);
-							canvasElement.style.animationName = "scanned";
-							clearAnimation();
-							document.getElementById("scanned-count").innerHTML = '<i class="fa fa-qrcode"></i>' + scannedCodes.length;
-							xhrGet(code.data, function(r){
-								xhrGet("https://api.countapi.xyz/update/AEGamesScoring/qrscore1/?amount="+Math.max(JSON.parse(r).value,1),function(r){
-									document.getElementById("point-counter").innerHTML = '<i class="fa fa-star"></i> ' + JSON.parse(r).value;
+						if (code.data.match(/countapi.xyz\/[^\/]*\/AEGamesScoring/)) {
+							if (playerId) {
+								scannedCodes.push(outputData.innerText = code.data);
+								canvasElement.style.animationName = "scanned";
+								clearAnimation();
+								document.getElementById("scanned-count").innerHTML = '<i class="fa fa-qrcode"></i>' + scannedCodes.length;
+								xhrGet(code.data, function(r){
+									xhrGet("https://api.countapi.xyz/update/AEGamesScoring/qrscore1/?amount="+Math.max(JSON.parse(r).value,1),function(r){
+										document.getElementById("point-counter").innerHTML = '<i class="fa fa-star"></i> ' + JSON.parse(r).value;
+									});
 								});
-							});
+							} else {
+								if (code.data.match(/qrNextPlayer/)) {
+									xhrGet("https://api.countapi.xyz/hit/AEGamesScoring/qrNextPlayer/",function(r){
+										document.getElementById("player-number").innerHTML = '<i class="fa fa-user"></i> ' + (playerId = JSON.parse(r).value);
+										localStorage.setItem("qrRushPlayerId", playerId);
+									});
+								} else {
+									alert("Please join the game before scanning a code");
+									canvasElement.style.animationName = "already-scanned";
+									clearAnimation();
+								}
+							}
 						} else {
 							canvasElement.style.animationName = "invalid-scan";
 							clearAnimation();
