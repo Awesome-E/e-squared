@@ -27,7 +27,7 @@
 				box-shadow: 0 0 16px 8px white;
 				border-radius: 16px;
 				animation-duration: 1.5s;
-				transition: height 0.5s;
+				transition: width 8s, height 0.5s, box-shadow 2s;
 			}
 			h1 {
 				margin: 8px auto;
@@ -130,7 +130,7 @@
 
 			// Use facingMode: environment to attempt to get the front camera on phones
 			startBtn.onclick = function(){
-				if (!gameActive) return alert("Game is not active");
+				if (!gameActive) return alert("QR Rush is currently inactive");
 				startBtn.disabled = true;
 				navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
 					startBtn.hidden = true;
@@ -156,7 +156,8 @@
 
 					let scale = window.innerWidth / video.videoWidth * 0.8;
 
-					canvasElement.style.height = gameActive ? (canvasElement.height = video.videoHeight * scale) + "px" : "0";
+					if (!gameActive) return;
+					canvasElement.style.height = (canvasElement.height = video.videoHeight * scale) + "px";
 					canvasElement.style.width = (canvasElement.width = video.videoWidth * scale) + "px";
 					canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
 					var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
@@ -227,6 +228,9 @@
 					gameActive = !!JSON.parse(r).value;
 					if (!gameActive && videoStream) {
 						videoStream.getTracks().forEach(function(track) {track.stop();});
+						canvasElement.style.height = "0";
+						canvasElement.style.width = "0";
+						canvasElement.style.boxShadow = "none";
 					}
 				});
 			}
