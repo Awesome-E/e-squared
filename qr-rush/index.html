@@ -147,15 +147,20 @@
 						//outputData.parentElement.hidden = false;
 						if (code.data.match(/countapi.xyz\/[^\/]*\/AEGamesScoring/)) {
 							if (playerId) {
-								scannedCodes.push(outputData.innerText = code.data);
-								canvasElement.style.animationName = "scanned";
-								clearAnimation();
-								document.getElementById("scanned-count").innerHTML = '<i class="fa fa-qrcode"></i>' + scannedCodes.length;
-								xhrGet(code.data, function(r){
-									xhrGet("https://api.countapi.xyz/update/AEGamesScoring/qrscore1/?amount="+Math.max(JSON.parse(r).value,1),function(r){
-										document.getElementById("point-counter").innerHTML = '<i class="fa fa-star"></i> ' + JSON.parse(r).value;
+								if (code.data.match(/qrNextPlayer/)) {
+									canvasElement.style.animationName = "already-scanned";
+									clearAnimation();
+								} else {
+									scannedCodes.push(outputData.innerText = code.data);
+									canvasElement.style.animationName = "scanned";
+									clearAnimation();
+									document.getElementById("scanned-count").innerHTML = '<i class="fa fa-qrcode"></i> ' + scannedCodes.length;
+									xhrGet(code.data, function(r){
+										xhrGet("https://api.countapi.xyz/update/AEGamesScoring/qrscore1/?amount="+Math.max(JSON.parse(r).value,1),function(r){
+											document.getElementById("point-counter").innerHTML = '<i class="fa fa-star"></i> ' + JSON.parse(r).value;
+										});
 									});
-								});
+								}
 							} else {
 								if (code.data.match(/qrNextPlayer/)) {
 									xhrGet("https://api.countapi.xyz/hit/AEGamesScoring/qrNextPlayer/",function(r){
