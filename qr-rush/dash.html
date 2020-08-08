@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+		<link rel="apple-touch-icon" sizes="57x57" href="icons/apple-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="icons/apple-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="icons/apple-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="icons/apple-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="icons/apple-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="icons/apple-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-icon-180x180.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="icons/android-icon-192x192.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+		<link rel="manifest" href="icons/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffffff">
+		<meta name="msapplication-TileImage" content="icons/ms-icon-144x144.png">
+		<meta name="theme-color" content="#ffffff">
+		<meta name="viewport" content="width=device-width,initial-scale=1"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<style>
+			input {
+				width: 40px;
+			}
+			div {
+				margin: 8px 0;
+			}
+			body {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				flex-direction: column;
+				font-family: sans-serif;
+				background-color: black;
+				color: lightgray;
+			}
+			input, button {
+				color: white;
+				background-color: gray;
+				border: 1px solid white;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>QR Rush Dashboard</h1>
+		<div><span>Game Controls <button onclick="gamestart(1)">Start</button> <button onclick="gamestart(0)">Stop</button></span></div>
+		<div><span>Reset Joined Player Count to <input value="0" type="number"/> <button onclick="pcount(this.previousElementSibling.value)">Reset</button></span></div>
+		<br/>
+		<div><span>Reset Player <input id="p1" type="number"/> Score to <input id="p2" value="0" type="number"/> <button onclick="pscore1('p1','p2')">Reset</button></span></div>
+		<div><span>Reset Players <input id="p3" type="number"/>-<input id="p4" type="number"/> Scores to <input id="p5" value="0" type="number"/> <button onclick="pscoreall('p3','p4','p5')">Reset</button></span></div>
+		<br/>
+		<div><span>Reset QR <input id="q1" type="number"/> Score to <input id="q2" value="5" type="number"/> <button onclick="qscore1('q1','q2')">Reset</button></span></div>
+		<div><span>Reset QRs <input id="q3" type="number"/>-<input id="q4" type="number"/> Scores to <input id="q5" value="5" type="number"/> <button onclick="qscoreall('q3','q4','q5')">Reset</button></span></div>
+		<br/><br/><br/><br/><br/>
+		<script>
+			function xhrGet(url, fn) {
+				var xhr = new XMLHttpRequest();
+				xhr.open("GET",url);
+				xhr.onload = ()=>{fn(xhr.responseText)};
+				xhr.send();
+			}
+			function gamestart(start) {
+				xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrRushActive/?value=" + start, function(r){alert("Game Active set to " + Boolean(JSON.parse(r).value))});
+			}
+			function pcount(val) {
+				xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrNextPlayer/?value=" + val, function(r){alert("Player Count Set to " + JSON.parse(r).value)})
+			}
+			function pscore1(id1, id2) {
+				var player = document.getElementById(id1).value, score = document.getElementById(id2).value;
+				xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrscore"+player+"/?value="+score, function(r){
+					alert("Player " + player + " score set to " + JSON.parse(r).value);
+				});
+			}
+			function pscoreall(id1,id2,id3) {
+				var playerstart = document.getElementById(id1).value, playerend = document.getElementById(id2).value, score = document.getElementById(id3).value;
+				v = 0;
+				for (i = playerstart; i <= playerend; i++) {
+					setTimeout(()=>{v++;xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrscore"+v+"/?value="+score+"&enable_reset=1&update_lowerbound=-10&update_upperbound=10",function(r){console.log("P"+v,JSON.parse(r))});},2500*(i-1));
+				}
+			}
+			function qscore1(id1, id2) {
+				var qrNumber = document.getElementById(id1).value, score = document.getElementById(id2).value;
+				xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrcode"+qrNumber+"/?value="+score, function(r){
+					alert("QR Code " + qrNumber + " value set to " + JSON.parse(r).value);
+				});
+			}
+			function qscoreall(id1,id2,id3) {
+				var playerstart = document.getElementById(id1).value, playerend = document.getElementById(id2).value, score = document.getElementById(id3).value;
+				w = 0;
+				for (i = playerstart; i <= playerend; i++) {
+					setTimeout(()=>{w++;xhrGet("https://api.countapi.xyz/set/AEGamesScoring/qrcode"+w+"/?value="+score+"&enable_reset=1&update_lowerbound=-10&update_upperbound=10",function(r){console.log("QR"+w,JSON.parse(r))});},2500*(i-1));
+				}
+			}
+		</script>
+	</body>
+</html>

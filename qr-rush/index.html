@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en-US">
 	<head>
+		<link rel="apple-touch-icon" sizes="57x57" href="icons/apple-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="icons/apple-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="icons/apple-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="icons/apple-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="icons/apple-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="icons/apple-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-icon-180x180.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="icons/android-icon-192x192.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+		<link rel="manifest" href="icons/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffffff">
+		<meta name="msapplication-TileImage" content="icons/ms-icon-144x144.png">
+		<meta name="theme-color" content="#ffffff">
 		<meta name="viewport" content="width=device-width,initial-scale=1"/>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 		<style>
@@ -10,6 +27,7 @@
 				box-shadow: 0 0 16px 8px white;
 				border-radius: 16px;
 				animation-duration: 1.5s;
+				transition: height 0.5s;
 			}
 			h1 {
 				margin: 8px auto;
@@ -53,6 +71,11 @@
 				35% {box-shadow: 0 0 16px 8px red;}
 				100% {box-shadow: 0 0 16px 8px white;}
 			}
+			@keyframes user-scan {
+				0% {box-shadow: 0 0 16px 8px skyblue;}
+				35% {box-shadow: 0 0 16px 8px skyblue;}
+				100% {box-shadow: 0 0 16px 8px white;}
+			}
 		</style>
 		<script src="https://cdn.jsdelivr.net/npm/jsqr@1.3.1/dist/jsQR.min.js"></script>
 	</head>
@@ -81,7 +104,7 @@
 					startBtn = document.querySelector("button"),
 					scannedCodes = [];
 			
-			var animationClearTimeout = null, playerId = Number(localStorage.getItem("qrRushPlayerId")||0);
+			var animationClearTimeout = null, playerId = Number(localStorage.getItem("qrRushPlayerId")||0), gameActive = false, videoStream;
 			if (playerId) document.getElementById("player-number").innerHTML = '<i class="fa fa-user"></i> ' + playerId;
 			
 			function clearAnimation() {
@@ -107,6 +130,7 @@
 
 			// Use facingMode: environment to attempt to get the front camera on phones
 			startBtn.onclick = function(){
+				if (!gameActive) return alert("Game is not active");
 				startBtn.disabled = true;
 				navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
 					startBtn.hidden = true;
@@ -115,6 +139,7 @@
 					video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
 					video.play();
 					requestAnimationFrame(tick);
+					videoStream = stream;
 				}).catch(function(){
 					alert("Unable to start camera");
 					startBtn.hidden = false;
@@ -131,8 +156,8 @@
 
 					let scale = window.innerWidth / video.videoWidth * 0.8;
 
-					canvasElement.height = video.videoHeight * scale;
-					canvasElement.width = video.videoWidth * scale;
+					canvasElement.style.height = gameActive ? (canvasElement.height = video.videoHeight * scale) + "px" : "0";
+					canvasElement.style.width = (canvasElement.width = video.videoWidth * scale) + "px";
 					canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
 					var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
 					var code = jsQR(imageData.data, imageData.width, imageData.height, {
@@ -148,7 +173,7 @@
 						if (code.data.match(/countapi.xyz\/[^\/]*\/AEGamesScoring/)) {
 							if (playerId) {
 								if (code.data.match(/qrNextPlayer/)) {
-									canvasElement.style.animationName = "already-scanned";
+									canvasElement.style.animationName = "user-scan";
 									clearAnimation();
 								} else {
 									scannedCodes.push(outputData.innerText = code.data);
@@ -166,6 +191,8 @@
 									xhrGet("https://api.countapi.xyz/hit/AEGamesScoring/qrNextPlayer/",function(r){
 										document.getElementById("player-number").innerHTML = '<i class="fa fa-user"></i> ' + (playerId = JSON.parse(r).value);
 										localStorage.setItem("qrRushPlayerId", playerId);
+										canvasElement.style.animationName = "user-scan";
+										clearAnimation();
 									});
 								} else {
 									alert("Please join the game before scanning a code");
@@ -173,6 +200,8 @@
 									clearAnimation();
 								}
 							}
+						} else if (!/https?:\/\//.test(code.data)) {
+							alert(code.data);
 						} else {
 							canvasElement.style.animationName = "invalid-scan";
 							clearAnimation();
@@ -190,8 +219,19 @@
 						outputData.parentElement.hidden = true;
 					}
 				}
-				requestAnimationFrame(tick);
+				if (gameActive) requestAnimationFrame(tick);
 			}
+			
+			function checkActive() {
+				xhrGet("https://api.countapi.xyz/get/AEGamesScoring/qrRushActive/",function(r){
+					gameActive = !!JSON.parse(r).value;
+					if (!gameActive && videoStream) {
+						videoStream.getTracks().forEach(function(track) {track.stop();});
+					}
+				});
+			}
+			setInterval(()=>{checkActive();},8000);
+			checkActive();
 		</script>
 	</body>
 </html>
