@@ -202,7 +202,7 @@
 								}
 							}
 						} else if (!/https?:\/\//.test(code.data)) {
-							alert(code.data);
+							code.data === "AEGamesScoring.leave()" ? (()=>{localStorage.removeItem("qrRushPlayerId"),location.reload();})() : alert(code.data);
 						} else {
 							canvasElement.style.animationName = "invalid-scan";
 							clearAnimation();
