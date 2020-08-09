@@ -21,7 +21,6 @@
 				box-shadow: 0 0 16px 8px white;
 				border-radius: 16px;
 				animation-duration: 1.5s;
-				transition: width 8s, height 0.5s, box-shadow 2s;
 			}
 			h1 {
 				margin: 8px auto;
@@ -222,9 +221,14 @@
 					gameActive = !!JSON.parse(r).value;
 					if (!gameActive && videoStream) {
 						videoStream.getTracks().forEach(function(track) {track.stop();});
-						canvasElement.style.height = "0";
-						canvasElement.style.width = "0";
-						canvasElement.style.boxShadow = "none";
+						canvasElement.style.transition = "transition: width 8s, height 0.5s, box-shadow 2s;";
+						setTimeout(()=>{
+							canvasElement.style.height = "0";
+							canvasElement.style.width = "0";
+							canvasElement.style.boxShadow = "none";
+						},0);
+					} else {
+						canvasElement.style.transition = "box-shadow 2s;";
 					}
 				});
 			}
