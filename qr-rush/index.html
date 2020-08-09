@@ -221,14 +221,14 @@
 					gameActive = !!JSON.parse(r).value;
 					if (!gameActive && videoStream) {
 						videoStream.getTracks().forEach(function(track) {track.stop();});
-						canvasElement.style.transition = "transition: width 8s, height 0.5s, box-shadow 2s;";
+						canvasElement.style.transition = "width 8s, height 0.5s, box-shadow 2s";
 						setTimeout(()=>{
 							canvasElement.style.height = "0";
 							canvasElement.style.width = "0";
 							canvasElement.style.boxShadow = "none";
 						},0);
 					} else {
-						canvasElement.style.transition = "box-shadow 2s;";
+						canvasElement.style.transition = "box-shadow 2s";
 					}
 				});
 			}
